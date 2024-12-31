@@ -20,12 +20,9 @@ app.use(express.json());
 app.use('/api/user', userRoutes);
 
 // Conectar a MongoDB
-mongoose.connect(process.env.MONGODB_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-})
-.then(() => console.log("Conectado a MongoDB"))
-.catch((error) => console.log("Error al conectar a MongoDB:", error));
+mongoose.connect(process.env.MONGODB_URI)
+  .then(() => console.log("Conectado a MongoDB"))
+  .catch((error) => console.log("Error al conectar a MongoDB:", error));
 
 // Rutas básicas de ejemplo
 app.get('/', (req, res) => {
