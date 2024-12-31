@@ -10,7 +10,7 @@ const app = express();
 
 // Configurar CORS
 const corsOptions = {
-    origin: 'https://frontend-villas-casas.vercel.app/', // Reemplaza con el dominio de tu aplicación en Vercel
+    origin: 'https://front-casas-villas.vercel.app/', // Reemplaza con el dominio de tu aplicación en Vercel
     methods: ['GET', 'POST', 'PUT'], // Métodos permitidos
     credentials: true, // Si usas cookies o encabezados de autenticación
 };
