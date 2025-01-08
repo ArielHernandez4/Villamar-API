@@ -1,24 +1,24 @@
 const nodemailer = require('nodemailer');
 
-// Configura el transporte SMTP con SendGrid
+// Configura el transporte SMTP con Mailgun
 const transporter = nodemailer.createTransport({
-    host: 'smtp.sendgrid.net', // Servidor SMTP de SendGrid
-    port: 587,                 // Puerto para STARTTLS
-    secure: false,             // Usar SSL/TLS solo en el puerto 465
+    host: process.env.MAILGUN_SMTP_SERVER,
+    port: process.env.MAILGUN_SMTP_PORT,
+    secure: false, // true para puerto 465 (SSL)
     auth: {
-        user: 'apikey',        // Usuario SMTP (siempre es "apikey")
-        pass: process.env.SENDGRID_API_KEY, // API Key de SendGrid
+        user: process.env.MAILGUN_SMTP_USER, // Usuario SMTP (postmaster@sandbox...)
+        pass: process.env.MAILGUN_SMTP_PASS, // Contraseña SMTP
     },
 });
 
 const sendEmail = async (to, subject, text, html) => {
     try {
         const mailOptions = {
-            from: process.env.SENDGRID_FROM_EMAIL, // Remitente (debe ser un correo verificado o autenticado)
-            to,                                    // Destinatario
+            from: process.env.MAILGUN_FROM_EMAIL, // Remitente (dominio sandbox)
+            to,                                    // Destinatario (autorizado)
             subject,                               // Asunto
             text,                                  // Texto sin formato
-            html,                                  // Versión HTML (opcional)
+            html,                                  // HTML opcional
         };
 
         await transporter.sendMail(mailOptions);
