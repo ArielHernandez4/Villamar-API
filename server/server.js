@@ -13,17 +13,18 @@ app.use(cors());
 app.use(express.json());
 app.use('/api/user', userRoutes);
 
-// Conectar a MongoDB
-mongoose.connect(process.env.MONGODB_URI)
-  .then(() => console.log("Conectado a MongoDB"))
-  .catch((error) => console.log("Error al conectar a MongoDB:", error));
+// Conexión a MongoDB
+mongoose.connect(process.env.MONGODB_URI, { useNewUrlParser: true, useUnifiedTopology: true })
+    .then(() => console.log('Conectado a MongoDB localmente'))
+    .catch((error) => console.error('Error al conectar a MongoDB:', error));
 
 // Rutas básicas de ejemplo
 app.get('/', (req, res) => {
     res.send("API en funcionamiento");
 });
 
+// Iniciar servidor
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Servidor en ejecución en el puerto ${PORT}`));
+app.listen(PORT, () => console.log(`Servidor corriendo en http://localhost:${PORT}`));
 
 module.exports = app; // Exportar la app para Vercel
