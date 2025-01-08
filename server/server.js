@@ -14,9 +14,10 @@ app.use(express.json());
 app.use('/api/user', userRoutes);
 
 // Conexión a MongoDB
-mongoose.connect(process.env.MONGODB_URI, { useNewUrlParser: true, useUnifiedTopology: true })
-    .then(() => console.log('Conectado a MongoDB localmente'))
-    .catch((error) => console.error('Error al conectar a MongoDB:', error));
+mongoose.connect(process.env.MONGODB_URI, { })
+    .then(() => console.log("Conectado a MongoDB localmente"))
+    .catch((error) => console.error("Error al conectar a MongoDB:", error));
+
 
 // Rutas básicas de ejemplo
 app.get('/', (req, res) => {
