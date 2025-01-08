@@ -156,41 +156,41 @@ router.put('/points/:id', async (req, res) => {
 
 // Enviar correo para restablecer contraseña
 router.post('/forgot-password', async (req, res) => {
-  const { correo } = req.body;
+    const { correo } = req.body;
 
-  try {
-      // Verifica si el usuario existe
-      const user = await User.findOne({ correo });
-      if (!user) {
-          return res.status(404).json({ message: 'Usuario no encontrado' });
-      }
+    try {
+        // Verifica si el usuario existe
+        const user = await User.findOne({ correo });
+        if (!user) {
+            return res.status(404).json({ message: 'Usuario no encontrado' });
+        }
 
-      // Genera un token único
-      const token = crypto.randomBytes(32).toString('hex');
-      user.resetPasswordToken = token;
-      user.resetPasswordExpires = Date.now() + 3600000; // 1 hora
-      await user.save();
+        // Genera un token único
+        const token = crypto.randomBytes(32).toString('hex');
+        user.resetPasswordToken = token;
+        user.resetPasswordExpires = Date.now() + 3600000; // 1 hora
+        await user.save();
 
-      // URL de restablecimiento
-      const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${token}`;
+        // Enlace de restablecimiento
+        const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${token}`;
 
-      // Enviar correo
-      const subject = 'Restablecimiento de contraseña';
-      const text = `Hemos recibido una solicitud para restablecer tu contraseña. Haz clic en el siguiente enlace: ${resetUrl}`;
-      const html = `
-          <h1>Restablecimiento de contraseña</h1>
-          <p>Hemos recibido una solicitud para restablecer tu contraseña.</p>
-          <a href="${resetUrl}">Haz clic aquí para restablecer tu contraseña</a>
-          <p>Este enlace estará activo durante 1 hora.</p>
-      `;
+        // Enviar correo
+        const subject = 'Restablecimiento de contraseña';
+        const text = `Hemos recibido una solicitud para restablecer tu contraseña. Haz clic en el siguiente enlace: ${resetUrl}`;
+        const html = `
+            <h1>Restablecimiento de contraseña</h1>
+            <p>Hemos recibido una solicitud para restablecer tu contraseña.</p>
+            <a href="${resetUrl}">Haz clic aquí para restablecer tu contraseña</a>
+            <p>Este enlace estará activo durante 1 hora.</p>
+        `;
 
-      await sendEmail(correo, subject, text, html);
+        await sendEmail(correo, subject, text, html);
 
-      res.json({ message: 'Correo enviado para restablecer contraseña.' });
-  } catch (error) {
-      console.error(error);
-      res.status(500).json({ message: 'Error al enviar el correo.' });
-  }
+        res.json({ message: 'Correo enviado para restablecer contraseña.' });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Error al enviar el correo.' });
+    }
 });
 
 
