@@ -1,39 +1,35 @@
 const express = require('express');
 const router = express.Router();
-const bcrypt = require('bcrypt');
 const User = require('../models/users.js');
-const crypto = require('crypto');
 const nodemailer = require('nodemailer');
 const sendEmail = require('../utils/sendEmail.js');
 
 
 router.post('/register', async (req, res) => {
-    try {
-      const { correo, nombre, apellido, contraseña, telefono } = req.body;
-  
+  try {
+      const { nombre, apellido, correo, contraseña, telefono } = req.body;
+
       if (!correo || !contraseña) {
-        return res.status(400).json({ error: 'Correo y contraseña son requeridos' });
+          return res.status(400).json({ error: 'Correo y contraseña son requeridos' });
       }
-  
-      const hashedPassword = await bcrypt.hash(contraseña, 10);
-  
+
       const newUser = new User({
-        nombre,
-        apellido,
-        correo,
-        telefono,
-        contraseña: hashedPassword,
-        puntos: 100, // Asignar 100 puntos al registrar
-        nivel: 1,    // Nivel inicial
+          nombre,
+          apellido,
+          correo,
+          telefono,
+          contraseña, // Contraseña en texto plano
+          puntos: 100, // Ejemplo de campo adicional
+          nivel: 1,    // Ejemplo de campo adicional
       });
-  
+
       await newUser.save();
       res.status(201).json({ message: 'Usuario registrado con éxito' });
-    } catch (error) {
+  } catch (error) {
       console.error(error);
       res.status(500).json({ error: 'Error al registrar el usuario' });
-    }
-  });
+  }
+});
   
 
 // Login de usuario
@@ -41,23 +37,21 @@ router.post('/login', async (req, res) => {
   try {
       const { correo, contraseña } = req.body;
 
-      // Buscar el usuario por el correo
+      // Buscar al usuario por correo
       const user = await User.findOne({ correo });
       if (!user) {
-          return res.status(400).json({ message: "Correo incorrecto" });
+          return res.status(400).json({ message: 'Correo incorrecto' });
       }
 
-      // Comparar la contraseña ingresada con la hash almacenada
-      const isMatch = await bcrypt.compare(contraseña, user.contraseña);
-      if (!isMatch) {
-          return res.status(400).json({ message: "Contraseña incorrecta" });
+      // Comparar directamente las contraseñas
+      if (user.contraseña !== contraseña) {
+          return res.status(400).json({ message: 'Contraseña incorrecta' });
       }
 
-      // Si la contraseña coincide, devolver el userId
-      res.json({ 
-          message: "Inicio de sesión exitoso", 
-          correo: user.correo, 
-          userId: user._id // Incluye el ID del usuario
+      res.json({
+          message: 'Inicio de sesión exitoso',
+          correo: user.correo,
+          userId: user._id,
       });
   } catch (error) {
       console.error(error);
@@ -156,41 +150,41 @@ router.put('/points/:id', async (req, res) => {
 
 // Enviar correo para restablecer contraseña
 router.post('/forgot-password', async (req, res) => {
-    const { correo } = req.body;
+  const { correo } = req.body;
 
-    try {
-        // Verifica si el usuario existe
-        const user = await User.findOne({ correo });
-        if (!user) {
-            return res.status(404).json({ message: 'Usuario no encontrado' });
-        }
+  try {
+      // Verifica si el usuario existe
+      const user = await User.findOne({ correo });
+      if (!user) {
+          return res.status(404).json({ message: 'Usuario no encontrado' });
+      }
 
-        // Genera un token único
-        const token = crypto.randomBytes(32).toString('hex');
-        user.resetPasswordToken = token;
-        user.resetPasswordExpires = Date.now() + 3600000; // 1 hora
-        await user.save();
+      // Genera un token único
+      const token = crypto.randomBytes(32).toString('hex');
+      user.resetPasswordToken = token;
+      user.resetPasswordExpires = Date.now() + 3600000; // 1 hora
+      await user.save();
 
-        // Enlace de restablecimiento
-        const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${token}`;
+      // URL de restablecimiento
+      const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${token}`;
 
-        // Enviar correo
-        const subject = 'Restablecimiento de contraseña';
-        const text = `Hemos recibido una solicitud para restablecer tu contraseña. Haz clic en el siguiente enlace: ${resetUrl}`;
-        const html = `
-            <h1>Restablecimiento de contraseña</h1>
-            <p>Hemos recibido una solicitud para restablecer tu contraseña.</p>
-            <a href="${resetUrl}">Haz clic aquí para restablecer tu contraseña</a>
-            <p>Este enlace estará activo durante 1 hora.</p>
-        `;
+      // Enviar correo
+      const subject = 'Restablecimiento de contraseña';
+      const text = `Hemos recibido una solicitud para restablecer tu contraseña. Haz clic en el siguiente enlace: ${resetUrl}`;
+      const html = `
+          <h1>Restablecimiento de contraseña</h1>
+          <p>Hemos recibido una solicitud para restablecer tu contraseña.</p>
+          <a href="${resetUrl}">Haz clic aquí para restablecer tu contraseña</a>
+          <p>Este enlace estará activo durante 1 hora.</p>
+      `;
 
-        await sendEmail(correo, subject, text, html);
+      await sendEmail(correo, subject, text, html);
 
-        res.json({ message: 'Correo enviado para restablecer contraseña.' });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Error al enviar el correo.' });
-    }
+      res.json({ message: 'Correo enviado para restablecer contraseña.' });
+  } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: 'Error al enviar el correo.' });
+  }
 });
 
 
@@ -200,7 +194,6 @@ router.post('/reset-password/:token', async (req, res) => {
   const { contraseña } = req.body;
 
   try {
-      // Verifica si el token es válido y no ha expirado
       const user = await User.findOne({
           resetPasswordToken: token,
           resetPasswordExpires: { $gt: Date.now() },
@@ -210,12 +203,12 @@ router.post('/reset-password/:token', async (req, res) => {
           return res.status(400).json({ message: 'Token inválido o expirado' });
       }
 
-      // Actualiza la contraseña
-      user.contraseña = await bcrypt.hash(contraseña, 10);
+      // Guardar la contraseña en texto plano
+      user.contraseña = contraseña;
       user.resetPasswordToken = undefined;
       user.resetPasswordExpires = undefined;
-      await user.save();
 
+      await user.save();
       res.json({ message: 'Contraseña actualizada con éxito.' });
   } catch (error) {
       console.error(error);
