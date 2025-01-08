@@ -8,6 +8,8 @@ const UserSchema = new mongoose.Schema({
    contraseña: { type: String, required: true },
    puntos: { type: Number, default: 0 }, // Campo para puntos
    nivel: { type: Number, default: 1 },
+   resetPasswordToken: { type: String },
+   resetPasswordExpires: { type: Date }, // Fecha de expiración del token
 });
 
 module.exports = mongoose.model('users', UserSchema);

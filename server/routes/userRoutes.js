@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcrypt');
 const User = require('../models/users.js');
+const crypto = require('crypto');
+const nodemailer = require('nodemailer');
 
 
 router.post('/register', async (req, res) => {
@@ -151,5 +153,64 @@ router.put('/points/:id', async (req, res) => {
   }
 });
 
+// Enviar correo para restablecer contraseña
+router.post('/forgot-password', async (req, res) => {
+  const { correo } = req.body;
+
+  try {
+      const user = await User.findOne({ correo });
+      if (!user) return res.status(404).json({ message: 'Usuario no encontrado' });
+
+      const token = crypto.randomBytes(32).toString('hex');
+      user.resetPasswordToken = token;
+      user.resetPasswordExpires = Date.now() + 3600000; // 1 hora
+      await user.save();
+
+      const transporter = nodemailer.createTransport({
+          service: 'gmail',
+          auth: {
+              user: process.env.EMAIL_USER,
+              pass: process.env.EMAIL_PASS,
+          },
+      });
+
+      const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${token}`;
+      const mailOptions = {
+          to: correo,
+          subject: 'Restablecimiento de contraseña',
+          text: `Haz clic en el siguiente enlace para restablecer tu contraseña: ${resetUrl}`,
+      };
+
+      await transporter.sendMail(mailOptions);
+      res.json({ message: 'Correo enviado para restablecer contraseña.' });
+  } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: 'Error al enviar el correo.' });
+  }
+});
+
+// Restablecer contraseña
+router.post('/reset-password/:token', async (req, res) => {
+  const { token } = req.params;
+  const { contraseña } = req.body;
+
+  try {
+      const user = await User.findOne({
+          resetPasswordToken: token,
+          resetPasswordExpires: { $gt: Date.now() },
+      });
+      if (!user) return res.status(400).json({ message: 'Token inválido o expirado' });
+
+      user.contraseña = await bcrypt.hash(contraseña, 10);
+      user.resetPasswordToken = undefined;
+      user.resetPasswordExpires = undefined;
+      await user.save();
+
+      res.json({ message: 'Contraseña actualizada con éxito.' });
+  } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: 'Error al restablecer la contraseña.' });
+  }
+});
 
 module.exports = router;
