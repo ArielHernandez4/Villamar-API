@@ -4,6 +4,7 @@ const bcrypt = require('bcrypt');
 const User = require('../models/users.js');
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
+const sendEmail = require('../utils/sendEmail.js');
 
 
 router.post('/register', async (req, res) => {
@@ -158,36 +159,40 @@ router.post('/forgot-password', async (req, res) => {
   const { correo } = req.body;
 
   try {
+      // Verifica si el usuario existe
       const user = await User.findOne({ correo });
-      if (!user) return res.status(404).json({ message: 'Usuario no encontrado' });
+      if (!user) {
+          return res.status(404).json({ message: 'Usuario no encontrado' });
+      }
 
+      // Genera un token único
       const token = crypto.randomBytes(32).toString('hex');
       user.resetPasswordToken = token;
       user.resetPasswordExpires = Date.now() + 3600000; // 1 hora
       await user.save();
 
-      const transporter = nodemailer.createTransport({
-          service: 'gmail',
-          auth: {
-              user: process.env.EMAIL_USER,
-              pass: process.env.EMAIL_PASS,
-          },
-      });
-
+      // URL de restablecimiento
       const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${token}`;
-      const mailOptions = {
-          to: correo,
-          subject: 'Restablecimiento de contraseña',
-          text: `Haz clic en el siguiente enlace para restablecer tu contraseña: ${resetUrl}`,
-      };
 
-      await transporter.sendMail(mailOptions);
+      // Enviar correo
+      const subject = 'Restablecimiento de contraseña';
+      const text = `Hemos recibido una solicitud para restablecer tu contraseña. Haz clic en el siguiente enlace: ${resetUrl}`;
+      const html = `
+          <h1>Restablecimiento de contraseña</h1>
+          <p>Hemos recibido una solicitud para restablecer tu contraseña.</p>
+          <a href="${resetUrl}">Haz clic aquí para restablecer tu contraseña</a>
+          <p>Este enlace estará activo durante 1 hora.</p>
+      `;
+
+      await sendEmail(correo, subject, text, html);
+
       res.json({ message: 'Correo enviado para restablecer contraseña.' });
   } catch (error) {
       console.error(error);
-      res.status(500).json({ error: 'Error al enviar el correo.' });
+      res.status(500).json({ message: 'Error al enviar el correo.' });
   }
 });
+
 
 // Restablecer contraseña
 router.post('/reset-password/:token', async (req, res) => {
@@ -195,12 +200,17 @@ router.post('/reset-password/:token', async (req, res) => {
   const { contraseña } = req.body;
 
   try {
+      // Verifica si el token es válido y no ha expirado
       const user = await User.findOne({
           resetPasswordToken: token,
           resetPasswordExpires: { $gt: Date.now() },
       });
-      if (!user) return res.status(400).json({ message: 'Token inválido o expirado' });
 
+      if (!user) {
+          return res.status(400).json({ message: 'Token inválido o expirado' });
+      }
+
+      // Actualiza la contraseña
       user.contraseña = await bcrypt.hash(contraseña, 10);
       user.resetPasswordToken = undefined;
       user.resetPasswordExpires = undefined;
@@ -209,8 +219,7 @@ router.post('/reset-password/:token', async (req, res) => {
       res.json({ message: 'Contraseña actualizada con éxito.' });
   } catch (error) {
       console.error(error);
-      res.status(500).json({ error: 'Error al restablecer la contraseña.' });
+      res.status(500).json({ message: 'Error al restablecer la contraseña.' });
   }
 });
-
 module.exports = router;
