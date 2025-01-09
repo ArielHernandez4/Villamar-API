@@ -26,11 +26,20 @@ app.get('/', (req, res) => {
     res.send("API en funcionamiento");
 });
 
+// Inicia Payload
+payload.init({
+  secret: process.env.PAYLOAD_SECRET,
+  mongoURL: process.env.DATABASE_URI,
+  express: app,
+});
+
+// Ruta de autenticación personalizada
+app.post('/custom-login', customAuth);
+
+
 // Iniciar servidor
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Servidor corriendo en http://localhost:${PORT}`));
-
-app.post('/api/custom-login', customAuth);
 
 
 module.exports = app; // Exportar la app para Vercel
