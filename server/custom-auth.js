@@ -1,4 +1,4 @@
-const User = require('./models/user'); // Asegúrate de que el modelo del usuario esté correctamente configurado
+const User = require('./models/users'); // Asegúrate de que el modelo del usuario esté correctamente configurado
 
 const customAuth = async (req, res) => {
     const { email, password } = req.body;
