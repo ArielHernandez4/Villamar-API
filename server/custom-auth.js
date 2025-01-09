@@ -1,34 +1,29 @@
-import payload from 'payload';
+const User = require('./models/User'); // Asegúrate de que el modelo del usuario esté correctamente configurado
 
-export default async function customAuth(req, res) {
-  const { email, password } = req.body;
+const customAuth = async (req, res) => {
+    const { email, password } = req.body;
 
-  try {
-    // Encuentra al usuario
-    const user = await payload.find({
-      collection: 'users',
-      where: { email: { equals: email } },
-    });
+    try {
+        // Busca al usuario por correo
+        const user = await User.findOne({ email });
+        if (!user) {
+            return res.status(401).json({ message: 'Usuario no encontrado' });
+        }
 
-    if (user.docs.length === 0) {
-      return res.status(401).json({ message: 'Usuario no encontrado' });
+        // Valida la contraseña en texto plano
+        if (user.password === password) {
+            // Genera un token de sesión
+            const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+                expiresIn: '1h',
+            });
+
+            return res.status(200).json({ token });
+        } else {
+            return res.status(401).json({ message: 'Contraseña incorrecta' });
+        }
+    } catch (error) {
+        return res.status(500).json({ message: 'Error interno', error });
     }
+};
 
-    const userData = user.docs[0];
-
-    // Valida la contraseña en texto plano
-    if (userData.password === password) {
-      // Genera un token de sesión
-      const token = await payload.auth.create({
-        collection: 'users',
-        data: { id: userData.id },
-      });
-
-      return res.status(200).json({ token });
-    } else {
-      return res.status(401).json({ message: 'Contraseña incorrecta' });
-    }
-  } catch (error) {
-    return res.status(500).json({ message: 'Error interno del servidor', error });
-  }
-}
+module.exports = customAuth;
