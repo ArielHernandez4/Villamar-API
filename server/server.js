@@ -2,6 +2,7 @@ const express = require('express');
 const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose');
 const cors = require('cors');
+import payload from 'payload';
 require('dotenv').config();
 
 const userRoutes = require('./routes/userRoutes');
