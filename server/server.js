@@ -5,6 +5,8 @@ const cors = require('cors');
 require('dotenv').config();
 
 const userRoutes = require('./routes/userRoutes');
+const customAuth = require('./custom-auth');
+
 
 const app = express();
 
@@ -27,5 +29,8 @@ app.get('/', (req, res) => {
 // Iniciar servidor
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Servidor corriendo en http://localhost:${PORT}`));
+
+app.post('/api/custom-login', customAuth);
+
 
 module.exports = app; // Exportar la app para Vercel
