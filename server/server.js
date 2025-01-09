@@ -2,11 +2,9 @@ const express = require('express');
 const jwt = require('jsonwebtoken');
 const mongoose = require('mongoose');
 const cors = require('cors');
-const payload from 'payload';
 require('dotenv').config();
 
 const userRoutes = require('./routes/userRoutes');
-const customAuth = require('./custom-auth');
 
 
 const app = express();
@@ -26,16 +24,6 @@ mongoose.connect(process.env.MONGODB_URI, { })
 app.get('/', (req, res) => {
     res.send("API en funcionamiento");
 });
-
-// Inicia Payload
-payload.init({
-  secret: process.env.PAYLOAD_SECRET,
-  mongoURL: process.env.DATABASE_URI,
-  express: app,
-});
-
-// Ruta de autenticación personalizada
-app.post('/custom-login', customAuth);
 
 
 // Iniciar servidor
